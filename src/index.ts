@@ -10,7 +10,7 @@ async function bootstrap(): Promise<void> {
   console.log('2. Orquestador inicializado');
 
   const port = 3000;
-  const host = 'localhost';
+  const host = '0.0.0.0';  // ← Cambiar de 'localhost' a '0.0.0.0';
 
   console.log(`3. Escuchando en ${host}:${port}`);
   await app.listen({ port, host });
