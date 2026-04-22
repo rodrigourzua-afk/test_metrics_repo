@@ -9,8 +9,8 @@ async function bootstrap(): Promise<void> {
   orquestador.inicializar();
   console.log('2. Orquestador inicializado');
 
-  const port = Number(process.env.PORT ?? 3000);
-  const host = process.env.HOST ?? '0.0.0.0';
+  const port = 3000;
+  const host = 'localhost';
 
   console.log(`3. Escuchando en ${host}:${port}`);
   await app.listen({ port, host });
