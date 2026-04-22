@@ -1,0 +1,208 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Intermediario {
+  id                       String    @id @default(uuid())
+  nombre                   String
+  rut                      String    @unique
+  bloqueActual             String?
+  fechaUltimaClasificacion DateTime?
+
+  datosContables       DatosContables[]
+  instrumentosCartera  InstrumentoCartera[]
+  personasRelacionadas PersonaRelacionada[]
+  clasificaciones      ClasificacionBloque[]
+  resultadosPatrimonio ResultadoPatrimonio[]
+  resultadosAPR        ResultadoAPR[]
+  resultadosRatios     ResultadoRatios[]
+  alertas              Alerta[]
+  escenariosStress     EscenarioStress[]
+}
+
+model ParametrosRegulatorios {
+  id                        String    @id @default(uuid())
+  version                   Int
+  fechaVigenciaInicio       DateTime
+  fechaVigenciaFin          DateTime?
+  tabla6Ponderadores        Json
+  limitePatrimonioMinimoUf  Decimal
+  porcentajeAprDefecto      Decimal   @default(0.03)
+  porcentajeAprMaximo       Decimal   @default(0.06)
+  limiteGarantiasUf         Decimal
+  limiteRazonEndeudamiento  Decimal   @default(20)
+  canastasMonedas           Json
+  tablaAntiguedadImpagos    Json
+  descuentosSegurosGarantias Json
+  usuarioResponsable        String
+
+  datosContables       DatosContables[]
+  resultadosPatrimonio ResultadoPatrimonio[]
+  resultadosAPR        ResultadoAPR[]
+  resultadosRatios     ResultadoRatios[]
+}
+
+model DatosContables {
+  id                  String   @id @default(uuid())
+  intermediarioId     String
+  fechaImportacion    DateTime @default(now())
+  origen              String
+  usuarioResponsable  String
+  cargaManual         Boolean  @default(false)
+  balanceGeneral      Json
+  estadoResultados    Json
+  cuentasContables    Json
+  versionParametrosId String?
+
+  intermediario      Intermediario           @relation(fields: [intermediarioId], references: [id])
+  versionParametros  ParametrosRegulatorios? @relation(fields: [versionParametrosId], references: [id])
+}
+
+model InstrumentoCartera {
+  id                    String    @id @default(uuid())
+  intermediarioId       String
+  tipoInstrumento       String
+  valorCustodia         Decimal?
+  volumenCompra         Decimal?
+  volumenVenta          Decimal?
+  montoNocional         Decimal?
+  plazoVencimiento      DateTime?
+  moneda                String?
+  tipoTasa              String?
+  subyacente            String?
+  clasificacionCrediticia String?
+  ponderadorTabla6      String?
+  fechaRegistro         DateTime  @default(now())
+  usuarioResponsable    String
+
+  intermediario Intermediario @relation(fields: [intermediarioId], references: [id])
+}
+
+model PersonaRelacionada {
+  id              String   @id @default(uuid())
+  intermediarioId String
+  nombre          String
+  tipoRelacion    String
+  saldoPorCobrar  Decimal  @default(0)
+  fechaRegistro   DateTime @default(now())
+  fechaModificacion DateTime @updatedAt
+
+  intermediario Intermediario @relation(fields: [intermediarioId], references: [id])
+}
+
+model ClasificacionBloque {
+  id              String    @id @default(uuid())
+  intermediarioId String
+  bloque          String
+  fechaInicio     DateTime
+  fechaFin        DateTime?
+  motivoCambio    String?
+
+  intermediario Intermediario @relation(fields: [intermediarioId], references: [id])
+}
+
+model ResultadoPatrimonio {
+  id                            String   @id @default(uuid())
+  intermediarioId               String
+  fechaCalculo                  DateTime
+  patrimonioContable            Decimal
+  deduccionIntangibles          Decimal
+  deduccionPersonasRelacionadas Decimal
+  deduccionGarantiasTerceros    Decimal
+  deduccionGastosAnticipados    Decimal
+  deduccionImpuestosDiferidos   Decimal
+  deduccionActivosImpagos       Decimal
+  patrimonioAjustado            Decimal
+  deduccionInversionesSociedades Decimal
+  deduccion50PctPropiedades     Decimal
+  patrimonioLiquido             Decimal
+  versionParametrosId           String?
+
+  intermediario     Intermediario           @relation(fields: [intermediarioId], references: [id])
+  versionParametros ParametrosRegulatorios? @relation(fields: [versionParametrosId], references: [id])
+}
+
+model ResultadoAPR {
+  id                  String   @id @default(uuid())
+  intermediarioId     String
+  fechaCalculo        DateTime
+  riesgoOperacional   Decimal
+  riesgoMercado       Decimal
+  riesgoCredito       Decimal
+  riesgoCriptoactivos Decimal
+  aprTotal            Decimal
+  detalleComponentes  Json?
+  versionParametrosId String?
+
+  intermediario     Intermediario           @relation(fields: [intermediarioId], references: [id])
+  versionParametros ParametrosRegulatorios? @relation(fields: [versionParametrosId], references: [id])
+}
+
+model ResultadoRatios {
+  id                       String   @id @default(uuid())
+  intermediarioId          String
+  fechaCalculo             DateTime
+  patrimonioMinimoRequerido Decimal
+  patrimonioAjustado       Decimal
+  cumplePatrimonioMinimo   Boolean?
+  excesoDeficitPatrimonio  Decimal
+  garantiasConstituidas    Decimal
+  cumpleGarantias          Boolean?
+  activosRealizables7d     Decimal
+  pasivosExigibles7d       Decimal
+  cumpleLiquidez           Boolean?
+  pasivoExigibleTotal      Decimal
+  razonEndeudamiento       Decimal?
+  cumpleEndeudamiento      Boolean?
+  versionParametrosId      String?
+
+  intermediario     Intermediario           @relation(fields: [intermediarioId], references: [id])
+  versionParametros ParametrosRegulatorios? @relation(fields: [versionParametrosId], references: [id])
+}
+
+model Alerta {
+  id              String   @id @default(uuid())
+  intermediarioId String
+  fechaAlerta     DateTime
+  tipoAlerta      String
+  indiceAfectado  String?
+  valorEnAlerta   Decimal?
+  prioridad       String
+  canal           String?
+  destinatarios   String?
+  enviada         Boolean  @default(false)
+  intentosEnvio   Int      @default(0)
+  detalleError    String?
+
+  intermediario Intermediario @relation(fields: [intermediarioId], references: [id])
+}
+
+model EscenarioStress {
+  id               String   @id @default(uuid())
+  intermediarioId  String
+  nombre           String
+  descripcion      String?
+  variablesFicticias Json
+  fechaCreacion    DateTime
+  usuarioCreacion  String
+
+  intermediario    Intermediario      @relation(fields: [intermediarioId], references: [id])
+  resultados       ResultadoStress[]
+}
+
+model ResultadoStress {
+  id               String   @id @default(uuid())
+  escenarioId      String
+  fechaEjecucion   DateTime
+  usuarioEjecucion String
+  ratiosActuales   Json?
+  ratiosProyectados Json?
+  impactoPorRatio  Json?
+
+  escenario EscenarioStress @relation(fields: [escenarioId], references: [id])
+}

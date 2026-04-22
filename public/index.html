@@ -1,0 +1,682 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CPM — CMF Prudential Metrics</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0f172a; color: #e2e8f0; min-height: 100vh; }
+    header { background: #1e293b; border-bottom: 1px solid #334155; padding: 16px 32px; display: flex; align-items: center; gap: 12px; }
+    header h1 { font-size: 20px; font-weight: 700; color: #f8fafc; }
+    header span { font-size: 13px; color: #64748b; }
+    .badge { background: #22c55e22; color: #22c55e; border: 1px solid #22c55e44; border-radius: 20px; padding: 2px 10px; font-size: 12px; font-weight: 600; }
+    main { padding: 32px; max-width: 1400px; margin: 0 auto; }
+    .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 32px; }
+    .grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px; margin-bottom: 32px; }
+    .card { background: #1e293b; border: 1px solid #334155; border-radius: 12px; padding: 20px; }
+    .card h3 { font-size: 12px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px; }
+    .card .value { font-size: 28px; font-weight: 700; color: #f8fafc; }
+    .card .sub { font-size: 12px; color: #64748b; margin-top: 4px; }
+    .status-ok { color: #22c55e; }
+    .status-warn { color: #f59e0b; }
+    .status-fail { color: #ef4444; }
+    .ratio-card { background: #1e293b; border: 1px solid #334155; border-radius: 12px; padding: 24px; }
+    .ratio-card h3 { font-size: 14px; font-weight: 600; color: #94a3b8; margin-bottom: 16px; }
+    .ratio-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid #1e293b55; }
+    .ratio-row:last-child { border-bottom: none; }
+    .ratio-label { font-size: 14px; color: #cbd5e1; }
+    .ratio-value { font-size: 16px; font-weight: 700; }
+    .pill { border-radius: 20px; padding: 3px 12px; font-size: 12px; font-weight: 600; }
+    .pill-ok { background: #22c55e22; color: #22c55e; border: 1px solid #22c55e44; }
+    .pill-fail { background: #ef444422; color: #ef4444; border: 1px solid #ef444444; }
+    .pill-na { background: #64748b22; color: #64748b; border: 1px solid #64748b44; }
+    .section-title { font-size: 16px; font-weight: 700; color: #f8fafc; margin-bottom: 16px; }
+    .form-card { background: #1e293b; border: 1px solid #334155; border-radius: 12px; padding: 24px; }
+    .form-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+    .form-group { display: flex; flex-direction: column; gap: 6px; }
+    .form-group label { font-size: 12px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; }
+    .form-group input, .form-group select { background: #0f172a; border: 1px solid #334155; border-radius: 8px; padding: 10px 12px; color: #e2e8f0; font-size: 14px; outline: none; transition: border-color 0.2s; }
+    .form-group input:focus, .form-group select:focus { border-color: #3b82f6; }
+    .btn { padding: 10px 20px; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; border: none; transition: all 0.2s; }
+    .btn-primary { background: #3b82f6; color: white; }
+    .btn-primary:hover { background: #2563eb; }
+    .btn-secondary { background: #334155; color: #e2e8f0; }
+    .btn-secondary:hover { background: #475569; }
+    .btn-success { background: #22c55e; color: white; }
+    .btn-success:hover { background: #16a34a; }
+    .actions { display: flex; gap: 12px; margin-top: 20px; }
+    .result-box { background: #0f172a; border: 1px solid #334155; border-radius: 8px; padding: 16px; margin-top: 16px; font-family: monospace; font-size: 13px; color: #94a3b8; white-space: pre-wrap; max-height: 200px; overflow-y: auto; display: none; }
+    .tabs { display: flex; gap: 4px; margin-bottom: 24px; background: #1e293b; border-radius: 10px; padding: 4px; width: fit-content; }
+    .tab { padding: 8px 20px; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer; color: #64748b; transition: all 0.2s; border: none; background: transparent; }
+    .tab.active { background: #3b82f6; color: white; }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+    .bloque-badge { display: inline-block; padding: 4px 16px; border-radius: 20px; font-size: 14px; font-weight: 700; }
+    .bloque-1 { background: #3b82f622; color: #3b82f6; border: 1px solid #3b82f644; }
+    .bloque-2 { background: #f59e0b22; color: #f59e0b; border: 1px solid #f59e0b44; }
+    .bloque-3 { background: #ef444422; color: #ef4444; border: 1px solid #ef444444; }
+    .progress-bar { background: #334155; border-radius: 4px; height: 8px; margin-top: 8px; overflow: hidden; }
+    .progress-fill { height: 100%; border-radius: 4px; transition: width 0.5s; }
+    .progress-ok { background: #22c55e; }
+    .progress-warn { background: #f59e0b; }
+    .progress-fail { background: #ef4444; }
+    .alert-box { background: #ef444411; border: 1px solid #ef444433; border-radius: 8px; padding: 12px 16px; margin-bottom: 12px; display: flex; align-items: center; gap: 10px; }
+    .alert-box .icon { font-size: 18px; }
+    .alert-box .msg { font-size: 13px; color: #fca5a5; }
+    #alerts-container { margin-bottom: 24px; }
+    /* Modal Manual */
+    .modal-overlay { display:none; position:fixed; inset:0; background:#00000088; z-index:1000; align-items:center; justify-content:center; }
+    .modal-overlay.open { display:flex; }
+    .modal { background:#1e293b; border:1px solid #334155; border-radius:16px; width:90%; max-width:860px; max-height:88vh; display:flex; flex-direction:column; }
+    .modal-header { padding:20px 28px; border-bottom:1px solid #334155; display:flex; justify-content:space-between; align-items:center; }
+    .modal-header h2 { font-size:18px; font-weight:700; color:#f8fafc; }
+    .modal-close { background:none; border:none; color:#64748b; font-size:22px; cursor:pointer; line-height:1; }
+    .modal-close:hover { color:#f8fafc; }
+    .modal-body { padding:28px; overflow-y:auto; }
+    .manual-section { margin-bottom:28px; }
+    .manual-section h3 { font-size:15px; font-weight:700; color:#3b82f6; margin-bottom:10px; padding-bottom:6px; border-bottom:1px solid #334155; }
+    .manual-section h4 { font-size:13px; font-weight:700; color:#94a3b8; margin:14px 0 6px; text-transform:uppercase; letter-spacing:0.04em; }
+    .manual-section p { font-size:14px; color:#cbd5e1; line-height:1.7; margin-bottom:8px; }
+    .manual-section ul { padding-left:20px; }
+    .manual-section ul li { font-size:14px; color:#cbd5e1; line-height:1.7; margin-bottom:4px; }
+    .manual-section ul li strong { color:#f8fafc; }
+    .manual-table { width:100%; border-collapse:collapse; margin-top:8px; }
+    .manual-table th { background:#0f172a; color:#64748b; font-size:12px; font-weight:600; text-transform:uppercase; padding:8px 12px; text-align:left; }
+    .manual-table td { padding:8px 12px; font-size:13px; color:#cbd5e1; border-bottom:1px solid #1e293b; }
+    .manual-table tr:last-child td { border-bottom:none; }
+    .formula-box { background:#0f172a; border:1px solid #334155; border-radius:8px; padding:12px 16px; font-family:monospace; font-size:13px; color:#7dd3fc; margin:8px 0; }
+    .btn-manual { background:#334155; color:#e2e8f0; border:none; border-radius:8px; padding:8px 18px; font-size:13px; font-weight:600; cursor:pointer; }
+    .btn-manual:hover { background:#475569; }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <h1>CPM — CMF Prudential Metrics</h1>
+      <span>Sistema de Monitoreo de Índices Prudenciales</span>
+    </div>
+    <div style="margin-left:auto;display:flex;align-items:center;gap:12px;">
+      <button class="btn-manual" onclick="document.getElementById('modal-manual').classList.add('open')">📖 Manual de Usuario</button>
+      <span id="server-status" class="badge">● Conectado</span>
+      <span id="last-update" style="font-size:12px;color:#64748b;">—</span>
+    </div>
+  </header>
+
+  <!-- MODAL MANUAL DE USUARIO -->
+  <div class="modal-overlay" id="modal-manual" onclick="if(event.target===this)this.classList.remove('open')">
+    <div class="modal">
+      <div class="modal-header">
+        <h2>📖 Manual de Usuario — CPM v1.0</h2>
+        <button class="modal-close" onclick="document.getElementById('modal-manual').classList.remove('open')">✕</button>
+      </div>
+      <div class="modal-body">
+
+        <div class="manual-section">
+          <h3>1. Introducción</h3>
+          <p>El sistema <strong>CMF-Prudential Metrics (CPM)</strong> automatiza el cálculo y monitoreo continuo de los índices prudenciales exigidos por la Comisión para el Mercado Financiero (CMF) a intermediarios de valores y corredores de bolsa de productos en Chile.</p>
+          <p>El sistema está organizado en cinco módulos accesibles desde las pestañas superiores: <strong>Dashboard, Patrimonio, APR, Carga de Datos</strong> y <strong>Stress Testing</strong>.</p>
+        </div>
+
+        <div class="manual-section">
+          <h3>2. Dashboard — Vista General</h3>
+          <p>La pantalla principal muestra en tiempo real los indicadores clave del intermediario.</p>
+          <h4>Tarjetas de resumen</h4>
+          <ul>
+            <li><strong>Bloque Regulatorio:</strong> Clasificación CMF vigente (Bloque 1, 2 o 3) según umbrales de ingresos, clientes, custodia y transacciones.</li>
+            <li><strong>Patrimonio Ajustado:</strong> Patrimonio contable neto de deducciones normativas. Si es negativo, se genera alerta de alta prioridad (CPM-PAT-001).</li>
+            <li><strong>APR Total:</strong> Activos Ponderados por Riesgo = 33,3 × (RO + RM + RC + RCripto).</li>
+            <li><strong>Razón de Endeudamiento:</strong> Pasivo exigible / Patrimonio Líquido. Límite regulatorio: 20 veces.</li>
+          </ul>
+          <h4>Índices Prudenciales</h4>
+          <table class="manual-table">
+            <tr><th>Índice</th><th>Fórmula / Condición</th><th>Límite</th></tr>
+            <tr><td>Patrimonio Mínimo</td><td>PA &gt; max(5.000 UF, %APR × APR_Total)</td><td>3% APR (configurable hasta 6%)</td></tr>
+            <tr><td>Garantías</td><td>Solo Bloque 2 y 3: Garantías ≥ 6.000 UF</td><td>6.000 UF</td></tr>
+            <tr><td>Liquidez</td><td>Pasivos ≤7 días ≤ Activos ≤7 días</td><td>Ratio ≤ 1</td></tr>
+            <tr><td>Endeudamiento</td><td>Pasivo Exigible / Patrimonio Líquido</td><td>≤ 20 veces</td></tr>
+          </table>
+        </div>
+
+        <div class="manual-section">
+          <h3>3. Módulo Patrimonio</h3>
+          <p>Calcula el Patrimonio Ajustado (PA) y el Patrimonio Líquido (PL) a partir de los datos contables del intermediario.</p>
+          <h4>Fórmulas aplicadas</h4>
+          <div class="formula-box">PA = Patrimonio Contable − (Intangibles + Personas Relacionadas + Garantías Terceros + Gastos Anticipados + Impuestos Diferidos + Activos Impagos)</div>
+          <div class="formula-box">PL = PA − Inversiones en Sociedades − (0,5 × Propiedades, Planta y Equipo)</div>
+          <h4>Cómo usar</h4>
+          <ul>
+            <li>Ingrese los valores en los campos del formulario.</li>
+            <li>Haga clic en <strong>Calcular</strong>.</li>
+            <li>El resultado muestra PA, PL, total de deducciones y si el patrimonio es negativo.</li>
+          </ul>
+        </div>
+
+        <div class="manual-section">
+          <h3>4. Módulo APR</h3>
+          <p>Calcula los Activos Ponderados por Riesgo (APR) a partir del componente de Riesgo Operacional.</p>
+          <h4>Fórmula del Riesgo Operacional</h4>
+          <div class="formula-box">RO = 0,4% × Custodia Neta + 0,1% × Volumen Transacciones + 0,01% × Nocional Derivados</div>
+          <div class="formula-box">APR Total = 33,3 × RO  (cuando solo se calcula RO)</div>
+          <h4>Campos requeridos</h4>
+          <ul>
+            <li><strong>Custodia Total:</strong> Valor de mercado de los valores en custodia.</li>
+            <li><strong>Descuento Seguros/Garantías:</strong> Factor entre 0 y 1 que reduce la custodia (ej: 0,1 = 10% de descuento).</li>
+            <li><strong>Volumen Transacciones:</strong> Monto total de transacciones tradicionales del período.</li>
+            <li><strong>Nocional Derivados:</strong> Valor nominal total de los contratos de derivados y CFD.</li>
+          </ul>
+        </div>
+
+        <div class="manual-section">
+          <h3>5. Módulo Carga de Datos</h3>
+          <p>Permite ingresar manualmente los datos contables del intermediario cuando la integración automática no está disponible.</p>
+          <h4>Campos requeridos</h4>
+          <ul>
+            <li><strong>ID Intermediario:</strong> Identificador único del intermediario en el sistema.</li>
+            <li><strong>Nombre Archivo:</strong> Nombre de referencia del archivo fuente (para trazabilidad).</li>
+            <li><strong>Usuario Responsable:</strong> Nombre del operador que realiza la carga.</li>
+            <li><strong>Balance General:</strong> Activos, Pasivos y Patrimonio deben cuadrar (Activos = Pasivos + Patrimonio).</li>
+            <li><strong>Estado de Resultados:</strong> Ingresos y Gastos del período.</li>
+          </ul>
+          <p>⚠️ Si el balance no cuadra, el sistema rechazará la carga con código <strong>CPM-INT-004</strong>.</p>
+        </div>
+
+        <div class="manual-section">
+          <h3>6. Módulo Stress Testing</h3>
+          <p>Simula escenarios adversos de mercado para evaluar el impacto en los índices prudenciales <strong>sin afectar los datos reales</strong>.</p>
+          <h4>Variables ficticias disponibles</h4>
+          <ul>
+            <li><strong>Variación Tasa de Interés:</strong> Valor entre -1 y 1. Positivo = alza de tasas. Afecta APR y Patrimonio.</li>
+            <li><strong>Variación Tipo de Cambio:</strong> Valor entre -1 y 1. Positivo = devaluación. Afecta activos y pasivos en moneda extranjera.</li>
+            <li><strong>Variación Volatilidad:</strong> Valor entre -1 y 1. Positivo = mayor volatilidad. Afecta garantías y APR.</li>
+          </ul>
+          <h4>Interpretación de resultados</h4>
+          <ul>
+            <li><strong>Ratios Actuales:</strong> Valores con datos reales sin modificar.</li>
+            <li><strong>Ratios Proyectados:</strong> Valores bajo el escenario de estrés simulado.</li>
+            <li><strong>Impacto por Ratio:</strong> Diferencia numérica entre actual y proyectado. Negativo = deterioro.</li>
+          </ul>
+        </div>
+
+        <div class="manual-section">
+          <h3>7. Clasificación por Bloques CMF</h3>
+          <table class="manual-table">
+            <tr><th>Bloque</th><th>Descripción</th><th>Requisitos adicionales</th></tr>
+            <tr><td>Bloque 1</td><td>Intermediario pequeño</td><td>Patrimonio Mínimo y Liquidez</td></tr>
+            <tr><td>Bloque 2</td><td>Intermediario mediano</td><td>+ Garantías ≥ 6.000 UF</td></tr>
+            <tr><td>Bloque 3</td><td>Intermediario grande</td><td>+ Garantías ≥ 6.000 UF + mayor APR</td></tr>
+          </table>
+          <p style="margin-top:10px;">El sistema genera alertas automáticas cuando el intermediario lleva <strong>9 meses consecutivos</strong> sobre los umbrales de un bloque superior (obligación de reclasificación) o <strong>6 meses consecutivos</strong> bajo los umbrales del bloque actual (posibilidad de solicitar reducción a la CMF).</p>
+        </div>
+
+        <div class="manual-section">
+          <h3>8. Códigos de Error</h3>
+          <table class="manual-table">
+            <tr><th>Código</th><th>Descripción</th></tr>
+            <tr><td>CPM-INT-001</td><td>Error de conectividad con sistema externo</td></tr>
+            <tr><td>CPM-INT-002</td><td>Respuesta inválida del sistema externo</td></tr>
+            <tr><td>CPM-INT-003</td><td>Esquema de datos incompleto (campo obligatorio faltante)</td></tr>
+            <tr><td>CPM-INT-004</td><td>Inconsistencia de cuadre contable</td></tr>
+            <tr><td>CPM-INT-005</td><td>Parámetro regulatorio en uso, no eliminable</td></tr>
+            <tr><td>CPM-PAT-001</td><td>Patrimonio Ajustado negativo — alerta alta prioridad</td></tr>
+            <tr><td>CPM-PAT-002</td><td>Patrimonio Líquido no positivo — razón de endeudamiento incalculable</td></tr>
+            <tr><td>CPM-CLS-001</td><td>Datos insuficientes para clasificación por bloques</td></tr>
+            <tr><td>CPM-RAT-001</td><td>Incumplimiento de índice prudencial</td></tr>
+            <tr><td>CPM-REP-001</td><td>Fallo de envío de notificación (email/SMS)</td></tr>
+          </table>
+        </div>
+
+        <div class="manual-section">
+          <h3>9. Indicador de Conexión</h3>
+          <p>El indicador <strong>● Conectado</strong> en la esquina superior derecha muestra el estado del servidor. Se actualiza automáticamente cada 10 segundos. Si aparece <strong>● Desconectado</strong>, verifique que el servidor esté corriendo con <code>npm run dev</code>.</p>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <main>
+    <div id="alerts-container"></div>
+
+    <!-- Tabs -->
+    <div class="tabs">
+      <button class="tab active" onclick="switchTab('dashboard')">Dashboard</button>
+      <button class="tab" onclick="switchTab('patrimonio')">Patrimonio</button>
+      <button class="tab" onclick="switchTab('apr')">APR</button>
+      <button class="tab" onclick="switchTab('datos')">Carga de Datos</button>
+      <button class="tab" onclick="switchTab('stress')">Stress Testing</button>
+    </div>
+
+    <!-- DASHBOARD -->
+    <div id="tab-dashboard" class="tab-content active">
+      <div class="grid-4">
+        <div class="card">
+          <h3>Bloque Regulatorio</h3>
+          <div class="value"><span id="bloque-badge" class="bloque-badge bloque-1">Bloque 1</span></div>
+          <div class="sub">Clasificación CMF vigente</div>
+        </div>
+        <div class="card">
+          <h3>Patrimonio Ajustado</h3>
+          <div class="value status-ok" id="patrimonio-ajustado">—</div>
+          <div class="sub">UF equivalente</div>
+        </div>
+        <div class="card">
+          <h3>APR Total</h3>
+          <div class="value" id="apr-total">—</div>
+          <div class="sub">Activos Ponderados por Riesgo</div>
+        </div>
+        <div class="card">
+          <h3>Razón Endeudamiento</h3>
+          <div class="value" id="razon-endeudamiento">—</div>
+          <div class="sub">Límite: 20x</div>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div class="ratio-card">
+          <h3>Índices Prudenciales</h3>
+          <div class="ratio-row">
+            <span class="ratio-label">Patrimonio Mínimo</span>
+            <div style="display:flex;align-items:center;gap:12px;">
+              <span class="ratio-value" id="ratio-pat-valor">—</span>
+              <span class="pill pill-na" id="ratio-pat-status">N/A</span>
+            </div>
+          </div>
+          <div class="ratio-row">
+            <span class="ratio-label">Garantías (Bloque 2/3)</span>
+            <div style="display:flex;align-items:center;gap:12px;">
+              <span class="ratio-value" id="ratio-gar-valor">—</span>
+              <span class="pill pill-na" id="ratio-gar-status">N/A</span>
+            </div>
+          </div>
+          <div class="ratio-row">
+            <span class="ratio-label">Índice de Liquidez</span>
+            <div style="display:flex;align-items:center;gap:12px;">
+              <span class="ratio-value" id="ratio-liq-valor">—</span>
+              <span class="pill pill-na" id="ratio-liq-status">N/A</span>
+            </div>
+          </div>
+          <div class="ratio-row">
+            <span class="ratio-label">Razón de Endeudamiento</span>
+            <div style="display:flex;align-items:center;gap:12px;">
+              <span class="ratio-value" id="ratio-end-valor">—</span>
+              <span class="pill pill-na" id="ratio-end-status">N/A</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="ratio-card">
+          <h3>Componentes APR</h3>
+          <div id="apr-components">
+            <div class="ratio-row">
+              <span class="ratio-label">Riesgo Operacional</span>
+              <span class="ratio-value" id="apr-op">—</span>
+            </div>
+            <div class="ratio-row">
+              <span class="ratio-label">Riesgo de Mercado</span>
+              <span class="ratio-value" id="apr-merc">—</span>
+            </div>
+            <div class="ratio-row">
+              <span class="ratio-label">Riesgo de Crédito</span>
+              <span class="ratio-value" id="apr-cred">—</span>
+            </div>
+            <div class="ratio-row">
+              <span class="ratio-label">Riesgo Criptoactivos</span>
+              <span class="ratio-value" id="apr-cripto">—</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PATRIMONIO -->
+    <div id="tab-patrimonio" class="tab-content">
+      <p class="section-title">Calcular Patrimonio Ajustado y Líquido</p>
+      <div class="form-card">
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Patrimonio Contable</label>
+            <input type="number" id="pat-contable" placeholder="0" value="1000000" />
+          </div>
+          <div class="form-group">
+            <label>Activos Intangibles</label>
+            <input type="number" id="pat-intangibles" placeholder="0" value="50000" />
+          </div>
+          <div class="form-group">
+            <label>Saldos Personas Relacionadas</label>
+            <input type="number" id="pat-personas" placeholder="0" value="30000" />
+          </div>
+          <div class="form-group">
+            <label>Activos en Garantía a Terceros</label>
+            <input type="number" id="pat-garantias" placeholder="0" value="20000" />
+          </div>
+          <div class="form-group">
+            <label>Gastos Anticipados</label>
+            <input type="number" id="pat-gastos" placeholder="0" value="10000" />
+          </div>
+          <div class="form-group">
+            <label>Impuestos Diferidos</label>
+            <input type="number" id="pat-impuestos" placeholder="0" value="15000" />
+          </div>
+          <div class="form-group">
+            <label>Activos Impagos (deducción calculada)</label>
+            <input type="number" id="pat-impagos" placeholder="0" value="5000" />
+          </div>
+          <div class="form-group">
+            <label>Inversiones en Sociedades</label>
+            <input type="number" id="pat-inversiones" placeholder="0" value="100000" />
+          </div>
+          <div class="form-group">
+            <label>Propiedades, Planta y Equipo</label>
+            <input type="number" id="pat-ppe" placeholder="0" value="200000" />
+          </div>
+        </div>
+        <div class="actions">
+          <button class="btn btn-primary" onclick="calcularPatrimonio()">Calcular</button>
+          <button class="btn btn-secondary" onclick="limpiarResultado('pat-result')">Limpiar</button>
+        </div>
+        <div class="result-box" id="pat-result"></div>
+      </div>
+    </div>
+
+    <!-- APR -->
+    <div id="tab-apr" class="tab-content">
+      <p class="section-title">Calcular Activos Ponderados por Riesgo</p>
+      <div class="form-card">
+        <p style="font-size:13px;color:#64748b;margin-bottom:16px;">Riesgo Operacional</p>
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Custodia Total</label>
+            <input type="number" id="apr-custodia" placeholder="0" value="5000000" />
+          </div>
+          <div class="form-group">
+            <label>Descuento Seguros/Garantías (0-1)</label>
+            <input type="number" id="apr-descuento" placeholder="0.1" value="0.1" step="0.01" min="0" max="1" />
+          </div>
+          <div class="form-group">
+            <label>Volumen Transacciones</label>
+            <input type="number" id="apr-transacciones" placeholder="0" value="2000000" />
+          </div>
+          <div class="form-group">
+            <label>Nocional Derivados</label>
+            <input type="number" id="apr-nocional" placeholder="0" value="1000000" />
+          </div>
+        </div>
+        <div class="actions">
+          <button class="btn btn-primary" onclick="calcularAPR()">Calcular APR</button>
+          <button class="btn btn-secondary" onclick="limpiarResultado('apr-result')">Limpiar</button>
+        </div>
+        <div class="result-box" id="apr-result"></div>
+      </div>
+    </div>
+
+    <!-- CARGA DE DATOS -->
+    <div id="tab-datos" class="tab-content">
+      <p class="section-title">Carga Manual de Datos Contables</p>
+      <div class="form-card">
+        <div class="form-grid">
+          <div class="form-group">
+            <label>ID Intermediario</label>
+            <input type="text" id="datos-intermediario" value="int-001" />
+          </div>
+          <div class="form-group">
+            <label>Nombre Archivo</label>
+            <input type="text" id="datos-archivo" value="balance_2024.json" />
+          </div>
+          <div class="form-group">
+            <label>Usuario Responsable</label>
+            <input type="text" id="datos-usuario" value="analista1" />
+          </div>
+          <div class="form-group">
+            <label>Activos Totales</label>
+            <input type="number" id="datos-activos" value="1000000" />
+          </div>
+          <div class="form-group">
+            <label>Pasivos Totales</label>
+            <input type="number" id="datos-pasivos" value="600000" />
+          </div>
+          <div class="form-group">
+            <label>Patrimonio</label>
+            <input type="number" id="datos-patrimonio" value="400000" />
+          </div>
+          <div class="form-group">
+            <label>Ingresos</label>
+            <input type="number" id="datos-ingresos" value="500000" />
+          </div>
+          <div class="form-group">
+            <label>Gastos</label>
+            <input type="number" id="datos-gastos" value="300000" />
+          </div>
+        </div>
+        <div class="actions">
+          <button class="btn btn-success" onclick="cargarDatos()">Cargar Datos</button>
+          <button class="btn btn-secondary" onclick="limpiarResultado('datos-result')">Limpiar</button>
+        </div>
+        <div class="result-box" id="datos-result"></div>
+      </div>
+    </div>
+
+    <!-- STRESS TESTING -->
+    <div id="tab-stress" class="tab-content">
+      <p class="section-title">Simulador de Stress Testing</p>
+      <div class="form-card">
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Nombre del Escenario</label>
+            <input type="text" id="stress-nombre" value="Escenario Crisis 2024" />
+          </div>
+          <div class="form-group">
+            <label>Usuario</label>
+            <input type="text" id="stress-usuario" value="analista1" />
+          </div>
+          <div class="form-group">
+            <label>Variación Tasa de Interés (-1 a 1)</label>
+            <input type="number" id="stress-tasa" value="0.2" step="0.01" min="-1" max="1" />
+          </div>
+          <div class="form-group">
+            <label>Variación Tipo de Cambio (-1 a 1)</label>
+            <input type="number" id="stress-cambio" value="0.15" step="0.01" min="-1" max="1" />
+          </div>
+          <div class="form-group">
+            <label>Variación Volatilidad (-1 a 1)</label>
+            <input type="number" id="stress-volatilidad" value="0.3" step="0.01" min="-1" max="1" />
+          </div>
+          <div class="form-group">
+            <label>Patrimonio Ajustado Base</label>
+            <input type="number" id="stress-patrimonio" value="870000" />
+          </div>
+          <div class="form-group">
+            <label>APR Total Base</label>
+            <input type="number" id="stress-apr" value="3000000" />
+          </div>
+          <div class="form-group">
+            <label>Garantías Base (UF)</label>
+            <input type="number" id="stress-garantias" value="8000" />
+          </div>
+        </div>
+        <div class="actions">
+          <button class="btn btn-primary" onclick="ejecutarStress()">Ejecutar Simulación</button>
+          <button class="btn btn-secondary" onclick="limpiarResultado('stress-result')">Limpiar</button>
+        </div>
+        <div class="result-box" id="stress-result"></div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    const API = 'http://localhost:3000';
+
+    function switchTab(name) {
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+      document.querySelector(`[onclick="switchTab('${name}')"]`).classList.add('active');
+      document.getElementById(`tab-${name}`).classList.add('active');
+    }
+
+    function fmt(n) {
+      if (n === null || n === undefined) return '—';
+      return new Intl.NumberFormat('es-CL', { maximumFractionDigits: 2 }).format(n);
+    }
+
+    function showResult(id, data) {
+      const el = document.getElementById(id);
+      el.style.display = 'block';
+      el.textContent = JSON.stringify(data, null, 2);
+    }
+
+    function limpiarResultado(id) {
+      const el = document.getElementById(id);
+      el.style.display = 'none';
+      el.textContent = '';
+    }
+
+    function setPill(id, cumple) {
+      const el = document.getElementById(id);
+      if (cumple === null || cumple === undefined) {
+        el.className = 'pill pill-na'; el.textContent = 'N/A';
+      } else if (cumple) {
+        el.className = 'pill pill-ok'; el.textContent = '✓ Cumple';
+      } else {
+        el.className = 'pill pill-fail'; el.textContent = '✗ Incumple';
+      }
+    }
+
+    async function calcularPatrimonio() {
+      const entrada = {
+        intermediarioId: 'int-001',
+        patrimonioContable: +document.getElementById('pat-contable').value,
+        intangibles: +document.getElementById('pat-intangibles').value,
+        personasRelacionadas: +document.getElementById('pat-personas').value,
+        garantiasTerceros: +document.getElementById('pat-garantias').value,
+        gastosAnticipados: +document.getElementById('pat-gastos').value,
+        impuestosDiferidos: +document.getElementById('pat-impuestos').value,
+        activosImpagos: +document.getElementById('pat-impagos').value,
+      };
+      const entradaLiq = {
+        intermediarioId: 'int-001',
+        patrimonioAjustado: 0,
+        inversionesSociedades: +document.getElementById('pat-inversiones').value,
+        propiedadesPlantaEquipo: +document.getElementById('pat-ppe').value,
+      };
+
+      const res = await fetch(`${API}/api/v1/calculos/patrimonio`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ patrimonioAjustado: entrada, patrimonioLiquido: entradaLiq })
+      });
+      const data = await res.json();
+      showResult('pat-result', data);
+
+      if (data.success) {
+        document.getElementById('patrimonio-ajustado').textContent = fmt(data.data.patrimonioAjustado.patrimonioAjustado);
+        if (data.data.patrimonioAjustado.negativo) addAlert('Patrimonio Ajustado negativo — CPM-PAT-001');
+      }
+    }
+
+    async function calcularAPR() {
+      const entrada = {
+        intermediarioId: 'int-001',
+        custodiaTotal: +document.getElementById('apr-custodia').value,
+        descuentoSegurosGarantias: +document.getElementById('apr-descuento').value,
+        volumenTransacciones: +document.getElementById('apr-transacciones').value,
+        nocionalDerivados: +document.getElementById('apr-nocional').value,
+      };
+
+      const res = await fetch(`${API}/api/v1/calculos/apr`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(entrada)
+      });
+      const data = await res.json();
+      showResult('apr-result', data);
+
+      if (data.success) {
+        document.getElementById('apr-total').textContent = fmt(data.data.aprTotal);
+        document.getElementById('apr-op').textContent = fmt(data.data.riesgoOperacional.riesgoOperacional);
+      }
+    }
+
+    async function cargarDatos() {
+      const activos = +document.getElementById('datos-activos').value;
+      const pasivos = +document.getElementById('datos-pasivos').value;
+      const patrimonio = +document.getElementById('datos-patrimonio').value;
+
+      const res = await fetch(`${API}/api/v1/integracion/cargar-contable`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contenido: {
+            balanceGeneral: { activos, pasivos, patrimonio },
+            estadoResultados: {
+              ingresos: +document.getElementById('datos-ingresos').value,
+              gastos: +document.getElementById('datos-gastos').value,
+              resultado: +document.getElementById('datos-ingresos').value - +document.getElementById('datos-gastos').value
+            },
+            cuentasContables: {}
+          },
+          nombreArchivo: document.getElementById('datos-archivo').value,
+          intermediarioId: document.getElementById('datos-intermediario').value,
+          usuarioResponsable: document.getElementById('datos-usuario').value
+        })
+      });
+      const data = await res.json();
+      showResult('datos-result', data);
+      if (data.success) addAlert('Datos contables cargados exitosamente ✓', 'ok');
+    }
+
+    async function ejecutarStress() {
+      const res = await fetch(`${API}/api/v1/calculos/stress`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          escenario: {
+            nombre: document.getElementById('stress-nombre').value,
+            variables: {
+              tasaInteres: +document.getElementById('stress-tasa').value,
+              tipoCambio: +document.getElementById('stress-cambio').value,
+              volatilidad: +document.getElementById('stress-volatilidad').value,
+            },
+            usuarioCreacion: document.getElementById('stress-usuario').value
+          },
+          datosReales: {
+            patrimonioAjustado: +document.getElementById('stress-patrimonio').value,
+            aprTotal: +document.getElementById('stress-apr').value,
+            garantias: +document.getElementById('stress-garantias').value,
+            activosRealizables7d: 500000,
+            pasivosExigibles7d: 400000,
+            patrimonioLiquido: 700000,
+            pasivoExigibleTotal: 8000000
+          }
+        })
+      });
+      const data = await res.json();
+      showResult('stress-result', data);
+    }
+
+    function addAlert(msg, type = 'error') {
+      const c = document.getElementById('alerts-container');
+      const div = document.createElement('div');
+      div.className = 'alert-box';
+      div.innerHTML = `<span class="icon">${type === 'ok' ? '✅' : '⚠️'}</span><span class="msg">${msg}</span>`;
+      c.appendChild(div);
+      setTimeout(() => div.remove(), 5000);
+    }
+
+    async function checkHealth() {
+      try {
+        const res = await fetch(`${API}/health`);
+        const data = await res.json();
+        document.getElementById('server-status').textContent = '● Conectado';
+        document.getElementById('server-status').style.color = '#22c55e';
+        document.getElementById('last-update').textContent = 'Actualizado: ' + new Date().toLocaleTimeString('es-CL');
+      } catch {
+        document.getElementById('server-status').textContent = '● Desconectado';
+        document.getElementById('server-status').style.color = '#ef4444';
+      }
+    }
+
+    checkHealth();
+    setInterval(checkHealth, 10000);
+  </script>
+</body>
+</html>
