@@ -2,10 +2,10 @@
 builder = "DOCKERFILE"
 
 [deploy]
-startCommand = "npx prisma migrate deploy && node dist/index.js"
+startCommand = "node dist/index.js"
+preDeployCommand = "npx prisma migrate deploy"
 healthcheckPath = "/health"
-healthcheckInterval = 10
-healthcheckTimeout = 5
-healthcheckMaxRetries = 5
 restartPolicyType = "ON_FAILURE"
+healthcheckTimeout = 30
+healthcheckMaxRetries = 3
 restartPolicyMaxRetries = 3
